@@ -1,0 +1,36 @@
+import csv
+import pandas as pd 
+import numpy as np
+from datetime import datetime
+from datetime import timedelta
+result_= "output_test.csv"
+with open (result_,'w+') as f:
+    f.write('somedata\n')
+file = "july-report.csv"
+df = pd.read_csv(file)
+
+new = df[['packettimestamp', 'spn_id_speed_s1','spn_id_speed_s2','spn_id_speed_s3', 'spn_id_speed_s4','spn_id_speed_s5']].copy()
+df2 = pd.melt(new, id_vars=["packettimestamp"], 
+                  var_name="Variable", value_name="Value")
+df2 = df2.sort_values(by=["packettimestamp","Variable"],ascending=[True,True])
+
+df2=df2.reset_index(drop=True)
+df2.Value = pd.to_numeric(df2.Value, errors='coerce').fillna(0).astype(np.int64)
+df2['acc']=''
+for i in range (0, len(df2.Value)-1):
+    df2.acc[i]=df2.Value[i+1]-df2.Value[i]
+df2['v0_15'] = np.where(df2['Value']<=15, 'yes', 'no')
+df2['v15_30'] = np.where(df2['Value']>15,'yes','no')
+df2['test']=df2.packettimestamp.str[0:19]
+for a in range(0,len(df2.packettimestamp)):
+    df2.test[a] = datetime.strptime(df2.test[a],'%Y-%m-%dT%H:%M:%S')
+    if a == len(df2.packettimestamp):
+      break
+df2['test1']=df2['test']
+for i in range (1,len(df2.Value)):
+    if (df2.test[i]==df2.test[i-1]):
+        df2.test1[i]=df2.test1[i-1]+ timedelta(seconds=1)
+    i+=1
+    
+result = df2
+result
